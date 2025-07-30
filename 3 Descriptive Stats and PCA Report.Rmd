@@ -1,0 +1,281 @@
+---
+title: "IPF Precisions Project"
+subtitle: "Descriptive Statistics and Principal Component Analysis"
+author: "Olivia Rippee"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, message=FALSE, warning=FALSE, 
+                      fig.align = "center", out.width = "80%",
+                      options(digits=3))
+
+library(tidyverse, warn.conflicts=FALSE)
+library(dplyr)
+library(tidyr)
+library(purrr)
+library(readxl)
+library(knitr)
+library(kableExtra)
+library(ggplot2)
+library(GGally)
+library(fBasics)
+library(magrittr)
+library(patchwork)
+library(png)
+library(grid)
+```
+
+
+```{r data}
+
+merged_PFF_impute <- read.csv("Datasets/merged_PFF_imputed.csv")
+
+merged_PFF_impute$Diag_Short <- factor(merged_PFF_impute$Diag_Short,
+                      levels = c("IPF", "SSc", "RA"),
+                      ordered = TRUE)
+
+merged_PFF_impute$Sex <- factor(merged_PFF_impute$Sex,
+                      levels = c("Female", "Male"),
+                      ordered = TRUE)
+
+merged_PFF_impute$Race <- factor(merged_PFF_impute$Race,
+                      levels = c("White", "Black", "Asian", "Other/Unknown"),
+                      ordered = TRUE)
+
+merged_PFF_impute$Ethnicity <- factor(merged_PFF_impute$Ethnicity,
+                      levels = c("Not Hispanic or Latino",
+                                 "Hispanic or Latino",
+                                 "Unknown"),
+                      ordered = TRUE)
+
+merged_PFF_impute$SmokingHistory <- factor(merged_PFF_impute$SmokingHistory,
+                      levels = c("Yes", "No", "Unknown"),
+                      ordered = TRUE)
+
+merged_PFF_impute$SecondHandSmoke <- factor(merged_PFF_impute$SecondHandSmoke,
+                      levels = c("Yes", "No", "Unknown"),
+                      ordered = TRUE)
+
+num_vars <- c("AgeConsent", "Height", "CigYears", "CigarYears", "PipeYears", "MarijYears")
+
+cat_vars <- c("Diag_Short", "Sex", "Race", "Ethnicity", "Smoking History", "SecondHandSmoke")
+
+```
+
+
+
+
+# Descriptive Statistics
+
+## Numeric Variables
+
+```{r desc stats numeric}
+
+sum_table <- t(basicStats(merged_PFF_impute[, num_vars])[c("Mean", "Stdev", "Minimum", "Maximum"),])
+
+kable(sum_table, digits=0, caption = "Descriptive Statistics for Numerical Variables") %>%
+  kable_styling(latex_options = "striped")
+
+```
+
+
+```{r correlation, fig.height=3}
+
+cor_matrix <- cor(merged_PFF_impute[num_vars])
+
+ggcorr(merged_PFF_impute[num_vars], label = TRUE, size = 4, label_size = 3.5, legend.size = 10, 
+       hjust = 1, low = "red4", mid = "white", high = "cadetblue4") +
+  coord_fixed(clip = "off")
+
+```
+
+\pagebreak
+
+
+
+## Categorical Variables
+
+```{r cat counts function}
+count_percent_nominal <- function(data, column, category_name) {
+  tab <- data %>%
+    count(Level = .data[[column]], .drop = FALSE) %>%
+    mutate(
+      Percent = round(100 * n / sum(n), 1),
+      Variable = category_name
+    ) %>%
+    select(Variable, Level, n, Percent) %>%
+    arrange(Level)
+
+  total_row <- data.frame(
+    Variable = category_name,
+    Level = "Total",
+    n = sum(tab$n),
+    Percent = 100
+  )
+
+  bind_rows(tab, total_row)
+}
+
+count_percent_ordered <- function(data, column, category_name, levels) {
+  tab <- data %>%
+    mutate(temp_col = factor(.data[[column]], levels = levels)) %>%
+    count(temp_col, .drop = FALSE) %>%
+    mutate(
+      Percent = round(100 * n / sum(n), 1),
+      Variable = category_name
+    ) %>%
+    rename(Level = temp_col) %>%
+    select(Variable, Level, n, Percent) %>%
+    arrange(Level)
+
+  total_row <- data.frame(
+    Variable = category_name,
+    Level = "Total",
+    n = sum(tab$n),
+    Percent = 100
+  )
+  
+  bind_rows(tab, total_row)
+}
+```
+
+
+```{r desc stats diag}
+
+diag_table <- count_percent_ordered(merged_PFF_impute, "Diag_Short", "Diag_Short", levels(merged_PFF_impute$Diag_Short))
+
+kable(diag_table[ , !(names(diag_table) == "Variable")],
+      caption = "Diagnosis Frequency Table") %>% 
+  kable_styling("striped")
+```
+
+
+```{r desc stats sex}
+
+sex_table <- count_percent_nominal(merged_PFF_impute, "Sex", "Sex")
+
+kable(sex_table[ , !(names(sex_table) == "Variable")],
+      caption = "Sex Frequency Table") %>% 
+  kable_styling("striped")
+```
+
+
+```{r desc stats race}
+
+# reminder: Race.x and Race.y exist)
+
+race_table <- count_percent_ordered(merged_PFF_impute, "Race", "Race", levels(merged_PFF_impute$Race))
+
+kable(race_table[ , !(names(race_table) == "Variable")],
+      caption = "Race Frequency Table") %>% 
+  kable_styling("striped")
+```
+
+
+```{r desc stats eth}
+
+eth_table <- count_percent_ordered(merged_PFF_impute, "Ethnicity", "Ethnicity", levels(merged_PFF_impute$Ethnicity))
+
+kable(eth_table[ , !(names(eth_table) == "Variable")],
+      caption = "Ethnicity Frequency Table") %>% 
+  kable_styling("striped")
+```
+
+
+```{r desc stats smoke hist}
+
+smoke_hist_table <- count_percent_ordered(merged_PFF_impute, "SmokingHistory", "SmokingHistory",
+                                          levels(merged_PFF_impute$SmokingHistory))
+
+kable(smoke_hist_table[ , !(names(smoke_hist_table) == "Variable")],
+      caption = "Smoking History Frequency Table") %>% 
+  kable_styling("striped")
+```
+
+\pagebreak
+
+```{r desc stats second smoke}
+
+second_smoke_table <- count_percent_ordered(merged_PFF_impute, "SecondHandSmoke", "SecondHandSmoke",
+                                            levels(merged_PFF_impute$SecondHandSmoke))
+
+kable(second_smoke_table[ , !(names(second_smoke_table) == "Variable")],
+      caption = "Secondhand Smoking Frequency Table") %>% 
+  kable_styling("striped")
+
+```
+
+
+
+
+# Principal Component Analysis
+
+## Method 1: Impute LOD/2
+
+For any observed missing values, the protein was checked for a reference limit of detection. If a reference LOD was found, the missing value was replaced with the LOD/2. If the cytokine had any missing values but no reference LOD was found, the cytokine was removed from the analysis.
+
+This method removed 535 cytokines, leaving 2404. All 1036 subjects were retained.
+
+```{r PCA}
+
+readRDS("Plots/PCA_impute.jpg")
+
+```
+
+
+
+
+## Method 2: Remove subjects with at least 20% NAs, then all cytokines with missing values
+
+```{r missingness fraction}
+
+readRDS("Plots/missingness_fraction.jpg")
+
+```
+
+27 subjects had 20% or more missing values. Removing these from the dataset resulted in 1009 subjects for the analysis. Then all cytokines with NA values for any subject were removed, leaving just 94.
+
+```{r PCA removed subjects}
+
+readRDS("Plots/PCA_remove_subjects.jpg")
+
+```
+
+
+
+
+## Method 3: Remove all cytokines with missing values
+
+All 1036 subjects were kept, but all cytokines with missing values were removed. 62 cytokines remained in the dataset. (All 62 of these cytokines were used in method 2.)
+
+```{r PCA removed NAs}
+
+readRDS("Plots/PCA_remove_NAs.jpg")
+
+```
+
+
+\pagebreak
+
+## Method 4: Look for IPF subtypes
+
+We used the complete cases imputed dataset for subsequent analyses. 1036 subjects and 2404 cytokines were used in the analysis.
+
+```{r PCA IPF subtypes}
+
+readRDS("Plots/PCA_IPF.jpg")
+
+```
+
+
+## Method 5: Randomly select 61 IPF patients
+
+We again used the complete cases imputed dataset. 61 patients with IPF were randomly selected and all others were removed from the data, leaving 153 total subjects. This was repeated 10 times.
+
+```{r PCA IPF random sample}
+
+include_graphics("Plots/PCA_IPF_random_sample.png")
+
+```
+
