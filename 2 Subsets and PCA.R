@@ -4,6 +4,7 @@ library(stringr)
 library(readxl)
 library(ggplot2)
 library(patchwork)
+library(jpeg)
 
 
 merged_PFF <- read.csv("Datasets/merged_PFF.csv")
@@ -12,13 +13,13 @@ UniProt_OlinkID <- read.csv("Datasets/UniProt_OlinkIDs.csv")
 
 
 
-# ---------------------------
+# ------------------------------------------
 # Method 1: Impute LOD/2
-# ---------------------------
+# ------------------------------------------
 
 LODcols <- c("UniProt", "ProteinName", "GeneName", "DilutionFactor", "Panel", "LOD")
 
-LODs <- read_excel("OLINK-LODs.xlsx", 
+LODs <- read_excel("olink-LOD-data.xlsx", 
                    range = cell_cols("A:F"), col_names = LODcols)
 LODs <- LODs[-c(1:2),]            # remove header rows
 LODs$LOD <- as.numeric(LODs$LOD)  # convert LOD to numeric for calculations
@@ -88,12 +89,12 @@ PCA_impute <- ggplot(pca_df, aes(x = PC1, y = PC2, color = Diagnosis)) +
   scale_color_brewer(palette = "Set1")
 
 
-saveRDS(PCA_impute, "Plots/PCA_impute.jpg")
+ggsave("Plots/PCA_impute.jpg", plot = PCA_impute)
 
 
-# ---------------------------
+# ------------------------------------------
 # Method 2: Remove subjects with at least 20% NAs, then all cytokines with missing values
-# ---------------------------
+# ------------------------------------------
 
 # Missingness fraction for each subject
 # --------------------------------
@@ -129,7 +130,7 @@ bar_plot <- ggplot(df_missing_frac, aes(x = SSID, y = missing_frac)) +
   theme(axis.text.x = element_blank())
 
 
-saveRDS(bar_plot, "Plots/missingness_fraction.jpg")
+ggsave("Plots/missingness_fraction.jpg", bar_plot)
 
 
 # Create dataframe
@@ -176,15 +177,13 @@ PCA_remove_subjects <- ggplot(pca_df, aes(x = PC1, y = PC2, color = Diagnosis)) 
   theme_minimal() + 
   scale_color_brewer(palette = "Set1")
 
-saveRDS(PCA_remove_subjects, "Plots/PCA_remove_subjects.jpg")
+ggsave("Plots/PCA_remove_subjects.jpg", plot = PCA_remove_subjects)
 
 
 
-
-
-# -------------------------------
+# ------------------------------------------
 # Method 3: Remove all cytokines with missing values
-# -------------------------------
+# ------------------------------------------
 
 # Remove cytokines with any missing values
 merged_PFF_rm_na <- merged_PFF[, colSums(is.na(merged_PFF)) == 0]
@@ -220,13 +219,13 @@ PCA_remove_NAs <- ggplot(pca_df, aes(x = PC1, y = PC2, color = Diagnosis)) +
   scale_color_brewer(palette = "Set1")
 
 
-saveRDS(PCA_remove_NAs, "Plots/PCA_remove_NAs.jpg")
+ggsave("Plots/PCA_remove_NAs.jpg", plot = PCA_remove_NAs)
 
 
 
-# --------------------------------------------
+# ------------------------------------------
 # Check whether the same cytokines are left for methods 2 and 3
-# --------------------------------------------
+# ------------------------------------------
 
 # Get column names
 colnames_df1 <- colnames(merged_PFF_rm_subjects[ , 146:ncol(merged_PFF_rm_subjects)])
@@ -243,10 +242,9 @@ length(common_cols)
 
 
 
-
-# -------------------------------
+# ------------------------------------------
 # Method 4: Look for IPF subtypes
-# -------------------------------
+# ------------------------------------------
 
 # Filter imputed dataset for just IPF
 # --------------
@@ -281,14 +279,14 @@ PCA_IPF <- ggplot(pca_df, aes(x = PC1, y = PC2, color = Diagnosis)) +
   scale_color_brewer(palette = "Set1")
 
 
-saveRDS(PCA_IPF, "Plots/PCA_IPF.jpg")
+ggsave("Plots/PCA_IPF.jpg", PCA_IPF)
 
 
 
 
-# -------------------------------
+# ------------------------------------------
 # Method 5: Randomly select 61 IPF patients
-# -------------------------------
+# ------------------------------------------
 
 # Loop to randomly sample 61 patients with IPF 10 times
 
@@ -332,7 +330,8 @@ for (i in 1:10) {
 
 PCA_IPF_random_sample <- wrap_plots(PCA_plots, nrow = 5, ncol = 2)
 
-ggsave("Plots/PCA_IPF_random_sample.png", 
-       PCA_IPF_random_sample, width = 10, height = 18, dpi = 300)
+ggsave("Plots/PCA_IPF_random_sample.jpg", plot = PCA_IPF_random_sample, 
+       device = "jpeg", width = 10, height = 18, dpi = 300)
+
 
 
