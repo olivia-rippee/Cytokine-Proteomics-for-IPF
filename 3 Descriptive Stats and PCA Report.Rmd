@@ -7,8 +7,7 @@ output: pdf_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE, message=FALSE, warning=FALSE, 
-                      fig.align = "center", out.width = "80%",
-                      options(digits=3))
+                      fig.align = "center", options(digits=3))
 
 library(tidyverse, warn.conflicts=FALSE)
 library(dplyr)
@@ -22,8 +21,8 @@ library(GGally)
 library(fBasics)
 library(magrittr)
 library(patchwork)
-library(png)
 library(grid)
+
 ```
 
 
@@ -59,7 +58,7 @@ merged_PFF_impute$SecondHandSmoke <- factor(merged_PFF_impute$SecondHandSmoke,
 
 num_vars <- c("AgeConsent", "Height", "CigYears", "CigarYears", "PipeYears", "MarijYears")
 
-cat_vars <- c("Diag_Short", "Sex", "Race", "Ethnicity", "Smoking History", "SecondHandSmoke")
+cat_vars <- c("Diag_Short", "Sex", "Race", "Ethnicity", "SmokingHistory", "SecondHandSmoke")
 
 ```
 
@@ -80,7 +79,7 @@ kable(sum_table, digits=0, caption = "Descriptive Statistics for Numerical Varia
 ```
 
 
-```{r correlation, fig.height=3}
+```{r correlation, fig.height=3, out.width = "80%"}
 
 cor_matrix <- cor(merged_PFF_impute[num_vars])
 
@@ -207,8 +206,6 @@ kable(second_smoke_table[ , !(names(second_smoke_table) == "Variable")],
 ```
 
 
-
-
 # Principal Component Analysis
 
 ## Method 1: Impute LOD/2
@@ -217,31 +214,29 @@ For any observed missing values, the protein was checked for a reference limit o
 
 This method removed 535 cytokines, leaving 2404. All 1036 subjects were retained.
 
-```{r PCA}
+```{r PCA impute, out.height="40%"}
 
-readRDS("Plots/PCA_impute.jpg")
+knitr::include_graphics("Plots/PCA_impute.jpg")
 
 ```
-
 
 
 
 ## Method 2: Remove subjects with at least 20% NAs, then all cytokines with missing values
 
-```{r missingness fraction}
+```{r missingness fraction, out.height="40%"}
 
-readRDS("Plots/missingness_fraction.jpg")
+knitr::include_graphics("Plots/missingness_fraction.jpg")
 
 ```
 
 27 subjects had 20% or more missing values. Removing these from the dataset resulted in 1009 subjects for the analysis. Then all cytokines with NA values for any subject were removed, leaving just 94.
 
-```{r PCA removed subjects}
+```{r PCA remove subjects, out.height="40%"}
 
-readRDS("Plots/PCA_remove_subjects.jpg")
+knitr::include_graphics("Plots/PCA_remove_subjects.jpg")
 
 ```
-
 
 
 
@@ -249,33 +244,35 @@ readRDS("Plots/PCA_remove_subjects.jpg")
 
 All 1036 subjects were kept, but all cytokines with missing values were removed. 62 cytokines remained in the dataset. (All 62 of these cytokines were used in method 2.)
 
-```{r PCA removed NAs}
+```{r PCA remove NAs, out.height="40%"}
 
-readRDS("Plots/PCA_remove_NAs.jpg")
+knitr::include_graphics("Plots/PCA_remove_NAs.jpg")
 
 ```
 
-
 \pagebreak
+
+
 
 ## Method 4: Look for IPF subtypes
 
 We used the complete cases imputed dataset for subsequent analyses. 1036 subjects and 2404 cytokines were used in the analysis.
 
-```{r PCA IPF subtypes}
+```{r PCA IPF subtypes, out.height="40%"}
 
-readRDS("Plots/PCA_IPF.jpg")
+knitr::include_graphics("Plots/PCA_IPF.jpg")
 
 ```
+
 
 
 ## Method 5: Randomly select 61 IPF patients
 
 We again used the complete cases imputed dataset. 61 patients with IPF were randomly selected and all others were removed from the data, leaving 153 total subjects. This was repeated 10 times.
 
-```{r PCA IPF random sample}
+```{r random subset}
 
-include_graphics("Plots/PCA_IPF_random_sample.png")
+knitr::include_graphics("Plots/PCA_IPF_random_sample.jpg")
 
 ```
 
